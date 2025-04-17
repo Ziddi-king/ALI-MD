@@ -3,7 +3,7 @@ const { cmd } = require("../command");
 const moment = require("moment");
 
 let botStartTime = Date.now(); // Enregistrement de l'heure de démarrage du bot
-const ALIVE_IMG = "https://i.ibb.co/60pdvSxw/mrfrankofc.jpg"; // Assurez-vous que cette URL est valide
+const ALIVE_IMG = "https://cdn.ironman.my.id/i/2du3i5.jpg"; // Assurez-vous que cette URL est valide
 
 cmd({
     pattern: "alive",
@@ -23,7 +23,7 @@ cmd({
         const runtimeHours = Math.floor(runtimeMilliseconds / (1000 * 60 * 60));
 
         const formattedInfo = `
-🌟 *ALI MD V1 STATUS* 🌟
+🌟 *ALI MD STATUS* 🌟
 Hey 👋🏻 ${pushname}
 🕒 *Time*: ${currentTime}
 📅 *Date*: ${currentDate}
@@ -69,3 +69,4 @@ Please report this issue or try again later.
         return reply(errorMessage);
     }
 });
+          

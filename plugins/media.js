@@ -1,5 +1,3 @@
-
-
 const { cmd } = require('../command');
 const axios = require('axios');
 const moment = require('moment');
@@ -80,7 +78,7 @@ async function sendDailyFact(conn, reply) {
 // Function to calculate the time until 6 AM and set the interval
 function sendDailyFactAt6AM(conn, reply) {
     const now = moment();
-    const targetTime = moment().set({ hour: 6, minute: 0, second: 0, millisecond: 0 }); // 6 AM Cameroon time
+    const targetTime = moment().set({ hour: 6, minute: 0, second: 0, millisecond: 0 }); // 6 AM time
 
     if (now.isAfter(targetTime)) {
         // If it's already past 6 AM today, set the time for 6 AM tomorrow
@@ -131,35 +129,74 @@ cmd({
         reply("❌ An error occurred while calculating your age. Please try again later.");
     }
 });
+
 cmd({
-    pattern: "timezone",
-    desc: "Get the current time in a specific timezone.",
-    react: "🕰️",
-    category: "utility",
-    use: ".timezone <timezone>",
-    filename: __filename
+  pattern: "timezone",
+  desc: "Get the current time for a specific country.",
+  react: "🕰️",
+  category: "utility",
+  use: ".timezone <country>",
+  filename: __filename,
 }, async (conn, mek, m, { args, reply }) => {
-    try {
-        if (args.length === 0) {
-            return reply("❌ Please provide a timezone. Example: `.timezone Europe/Paris`");
-        }
-
-        // Get the timezone input from the user
-        const timezone = args.join(" ");
-
-        // API endpoint to get time data
-        const response = await axios.get(`http://worldtimeapi.org/api/timezone/${timezone}`);
-
-        // Extract time data
-        const timeData = response.data;
-        const currentTime = timeData.datetime;
-        const timezoneName = timeData.timezone;
-
-        // Format the time and send it back to the user
-        reply(`🕰️ The current time in ${timezoneName} is: ${currentTime}`);
-        
-    } catch (error) {
-        console.error("Error fetching time:", error.message);
-        reply("❌ Sorry, I couldn't fetch the time for the specified timezone. Please ensure the timezone is valid.");
+  try {
+    if (args.length === 0) {
+      return reply("❌ Please provide a country. Example: `.timezone Pakistan`");
     }
+    
+    const country = args.join(" ");
+    const apiKey = process.env.IPGEO_API_KEY || "d6ca7264dd77441cbee974717ded084d";
+    const url = `https://api.ipgeolocation.io/timezone?apiKey=${apiKey}&country=${encodeURIComponent(country)}`;
+    
+    const response = await axios.get(url);
+    const data = response.data;
+    
+    if (!data || !data.date_time) {
+      return reply("❌ Unable to fetch time for the specified country. Please check your input.");
+    }
+    
+    const message = `🕰️ *Current Time in ${data.country_name}*\n\n` +
+                    `📅 Date & Time: ${data.date_time}\n` +
+                    `⌚ Time Zone: ${data.timezone}`;
+                    
+    reply(message);
+    
+  } catch (error) {
+    console.error("Error fetching time:", error.message);
+    reply("❌ Sorry, I couldn't fetch the time. Please check your input and try again.");
+  }
+});
+
+cmd({
+  pattern: "photo",
+  alias: ["toimage", "photo"],
+  desc: "Convert a sticker to an image.",
+  category: "tools",
+  filename: __filename,
+}, async (conn, mek, m, { reply }) => {
+  try {
+    // Vérifier si l'utilisateur a répondu à un message
+    if (!m.quoted) {
+      return reply("*📛 ᴘʟᴇᴀsᴇ ʀᴇᴘʟʏ ᴛᴏ ᴀ sᴛɪᴄᴋᴇʀ ᴛᴏ ᴄᴏɴᴠᴇʀᴛ ɪᴛ ᴛᴏ ᴀɴ ɪᴍᴀɢᴇ.*");
+    }
+
+    // Vérifier si le message cité est un sticker
+    if (m.quoted.mtype !== "stickerMessage") {
+      return reply("❌ The replied message is not a sticker.");
+    }
+
+    // Télécharger le sticker
+    let media = await m.quoted.download();
+
+    // Vérifier si le téléchargement a réussi
+    if (!media) {
+      return reply("❌ Failed to download the sticker.");
+    }
+
+    // Envoyer l'image convertie
+    await conn.sendMessage(m.chat, { image: media, caption: "*✅ HERE IS YOUR IMAGE.*" }, { quoted: m });
+
+  } catch (error) {
+    reply("❌ An error occurred while converting the sticker to an image.");
+    console.error(error);
+  }
 });

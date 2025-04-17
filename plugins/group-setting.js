@@ -79,69 +79,115 @@ reply(`❌ *Error Accurated !!*\n\n${e}`)
 }
 } )
 
-
 cmd({
     pattern: "promote",
     react: "🥏",
     alias: ["addadmin"],
-    desc: "To Add a participatant as a Admin",
+    desc: "Promote a user to admin.",
     category: "group",
-    use: '.promote',
     filename: __filename
-},
-async(conn, mek, m,{from, l, quoted, body, isCmd, command, mentionByTag , args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isCreator ,isDev, isAdmins, reply}) => {
-try{
-const msr = (await fetchJson('https://raw.githubusercontent.com/JawadYTX/KHAN-DATA/refs/heads/main/MSG/mreply.json')).replyMsg
+}, async (conn, mek, m, {
+    from,
+    quoted,
+    isGroup,
+    isAdmins,
+    isOwner,
+    participants,
+    isBotAdmins,
+    reply
+}) => {
+    try {
+        if (!isGroup) return reply("❌ This command can only be used in groups.");
+        if (!isAdmins && !isOwner) return reply("❌ Only group admins or the owner can use this command.");
+        if (!isBotAdmins) return reply("❌ I need admin privileges to promote members.");
 
-if (!isGroup) return reply(msr.only_gp)
-if (!isAdmins) { if (!isDev) return reply(msr.you_adm),{quoted:mek }} 
-if (!isBotAdmins) return reply(msr.give_adm)   
-	
-		let users = mek.mentionedJid ? mek.mentionedJid[0] : mek.msg.contextInfo.participant || false;
-	
-	if (!users) return reply("*Couldn't find any user in context* ❌")
-	
-		const groupAdmins = await getGroupAdmins(participants) 
-		if  ( groupAdmins.includes(users)) return reply('❗ *User Already an Admin*  ✔️')
-		    await conn.groupParticipantsUpdate(from, [users], "promote")
-			await conn.sendMessage(from,{text:`*_User promoted as an Admin_*`},{quoted:mek })
-	
-} catch (e) {
-await conn.sendMessage(from, { react: { text: '❌', key: mek.key } })
-console.log(e)
-reply(`❌ *Error Accurated !!*\n\n${e}`)
-}
-} )
+        // ➡️ Détecter le participant à promouvoir (en réponse ou mention)
+        let target;
+        if (m.quoted) {
+            target = m.quoted.sender;
+        } else if (m.mentionedJid && m.mentionedJid.length > 0) {
+            target = m.mentionedJid[0];
+        } else if (m.msg && m.msg.contextInfo && m.msg.contextInfo.mentionedJid && m.msg.contextInfo.mentionedJid.length > 0) {
+            target = m.msg.contextInfo.mentionedJid[0];
+        }
+
+        if (!target) return reply("❌ Please mention or reply to a user to promote.");
+
+        // ➡️ Vérifier si l'utilisateur est déjà admin
+        const isAlreadyAdmin = participants.some(p => p.id === target && p.admin !== null);
+        if (isAlreadyAdmin) return reply("❗ User is already an admin.");
+
+        // ➡️ Promouvoir le participant
+        await conn.groupParticipantsUpdate(from, [target], "promote")
+            .catch(err => {
+                console.error(`⚠️ Failed to promote ${target}:`, err);
+                return reply("❌ An error occurred while promoting the participant.");
+            });
+
+        // ➡️ Extraire le tag à partir du JID
+        const tag = target.split('@')[0];
+        reply(`*_@${tag} Promoted Successfully_*`, { mentions: [target] });
+
+    } catch (error) {
+        console.error('Error while executing promote:', error);
+        reply('❌ An error occurred while executing the command.');
+    }
+});
 
 cmd({
     pattern: "demote",
     react: "🥏",
     alias: ["removeadmin"],
-    desc: "To Demote Admin to Member",
+    desc: "Demote a user from admin.",
     category: "group",
-    use: '.demote',
     filename: __filename
-},
-async(conn, mek, m,{from, l, quoted, body, isCmd, command, mentionByTag , args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isCreator ,isDev, isAdmins, reply}) => {
-try{
-const msr = (await fetchJson('https://raw.githubusercontent.com/JawadYTX/KHAN-DATA/refs/heads/main/MSG/mreply.json')).replyMsg
+}, async (conn, mek, m, {
+    from,
+    quoted,
+    isGroup,
+    isAdmins,
+    isOwner,
+    participants,
+    isBotAdmins,
+    reply
+}) => {
+    try {
+        if (!isGroup) return reply("❌ This command can only be used in groups.");
+        if (!isAdmins && !isOwner) return reply("❌ Only group admins or the owner can use this command.");
+        if (!isBotAdmins) return reply("❌ I need admin privileges to demote members.");
 
-if (!isGroup) return reply(msr.only_gp)
-if (!isAdmins) { if (!isDev) return reply(msr.you_adm),{quoted:mek }} 
-if (!isBotAdmins) return reply(msr.give_adm)
-		let users = mek.mentionedJid ? mek.mentionedJid[0] : mek.msg.contextInfo.participant || false;
-			if (!users) return reply("*Couldn't find any user in context* ❌")
-		const groupAdmins = await getGroupAdmins(participants) 
-		if  ( !groupAdmins.includes(users)) return reply('❗ *User Already not an Admin*')
-		    await conn.groupParticipantsUpdate(from, [users], "demote")
-			await conn.sendMessage(from,{text:`*_User No longer an Admin_*`},{quoted:mek })
-	
-} catch (e) {
-await conn.sendMessage(from, { react: { text: '❌', key: mek.key } })
-console.log(e)
-reply(`❌ *Error Accurated !!*\n\n${e}`)
-}
-} )
+        // ➡️ Détecter le participant à rétrograder (en réponse ou mention)
+        let target;
+        if (m.quoted) {
+            target = m.quoted.sender;
+        } else if (m.mentionedJid && m.mentionedJid.length > 0) {
+            target = m.mentionedJid[0];
+        } else if (m.msg && m.msg.contextInfo && m.msg.contextInfo.mentionedJid && m.msg.contextInfo.mentionedJid.length > 0) {
+            target = m.msg.contextInfo.mentionedJid[0];
+        }
+
+        if (!target) return reply("❌ Please mention or reply to a user to demote.");
+
+        // ➡️ Vérifier si l'utilisateur est bien admin
+        const isAdmin = participants.some(p => p.id === target && p.admin !== null);
+        if (!isAdmin) return reply("❗ User is not an admin.");
+
+        // ➡️ Rétrograder le participant
+        await conn.groupParticipantsUpdate(from, [target], "demote")
+            .catch(err => {
+                console.error(`⚠️ Failed to demote ${target}:`, err);
+                return reply("❌ An error occurred while demoting the participant.");
+            });
+
+        // ➡️ Extraire le tag à partir du JID
+        const tag = target.split('@')[0];
+        reply(`*_@${tag} Demoted Successfully_*`, { mentions: [target] });
+
+    } catch (error) {
+        console.error('Error while executing demote:', error);
+        reply('❌ An error occurred while executing the command.');
+    }
+});
 
 cmd({
     pattern: "hidetag",
@@ -196,48 +242,73 @@ reply(`❌ *Error Accurated !!*\n\n${e}`)
 
 cmd({
     pattern: "ginfo",
-    react: "🥏",
-    alias: ["groupinfo"],
-    desc: "Get group informations.",
+    desc: "Get group information.",
     category: "group",
-    use: '.ginfo',
-    filename: __filename
-},
-async(conn, mek, m,{from, l, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isCreator ,isDev, isAdmins, reply}) => {
-try{
-const msr = (await fetchJson('https://raw.githubusercontent.com/JawadYTX/KHAN-DATA/refs/heads/main/MSG/mreply.json')).replyMsg
+    filename: __filename,
+}, async (conn, mek, m, {
+    from,
+    isGroup,
+    isAdmins,
+    isOwner,
+    isBotAdmins,
+    reply
+}) => {
+    try {
+        // Ensure the command is used in a group
+        if (!isGroup) return reply("*`[❌]`This command can only be used in groups.*");
 
-if (!isGroup) return reply(msr.only_gp)
-if (!isAdmins) { if (!isDev) return reply(msr.you_adm),{quoted:mek }} 
-if (!isBotAdmins) return reply(msr.give_adm)
-const ppUrls = [
-        'https://i.ibb.co/KhYC4FY/1221bc0bdd2354b42b293317ff2adbcf-icon.png',
-        'https://i.ibb.co/KhYC4FY/1221bc0bdd2354b42b293317ff2adbcf-icon.png',
-        'https://i.ibb.co/KhYC4FY/1221bc0bdd2354b42b293317ff2adbcf-icon.png',
-      ];
-let ppUrl = await conn.profilePictureUrl( from , 'image')
-if (!ppUrl) { ppUrl = ppUrls[Math.floor(Math.random() * ppUrls.length)];}
-const metadata = await conn.groupMetadata(from)
-const groupAdmins = participants.filter(p => p.admin);
-const listAdmin = groupAdmins.map((v, i) => `${i + 1}. @${v.id.split('@')[0]}`).join('\n');
-const owner = metadata.owner
+        // Only admins or the owner can use this command
+        if (!isAdmins && !isOwner) return reply("*`[❌]`Only admins and the owner can use this command.*");
 
-const gdata = `*「 Group Information 」*\n
-\t*${metadata.subject}*
+        // Ensure the bot has admin privileges
+        if (!isBotAdmins) return reply("*`[❌]`I need admin privileges to execute this command.*");
 
-*Group Jid* - ${metadata.id}
-*Participant Count* - ${metadata.size}
-*Group Creator* - ${owner.split('@')[0]}
-*Group Description* - ${metadata.desc?.toString() || 'undefined'}\n
-*Group Admins* - \n${listAdmin}\n`
+        // Get group metadata
+        const groupMetadata = await conn.groupMetadata(from);
+        const groupName = groupMetadata.subject;
+        const memberCount = groupMetadata.participants.length;
 
-await conn.sendMessage(from,{image:{url: ppUrl },caption: gdata + config.FOOTER },{quoted:mek })
-} catch (e) {
-await conn.sendMessage(from, { react: { text: '❌', key: mek.key } })
-console.log(e)
-reply(`❌ *Error Accurated !!*\n\n${e}`)
-}
-} )
+        // Get group creator
+        let creator = groupMetadata.owner ? `@${groupMetadata.owner.split('@')[0]}` : 'Unknown';
+
+        // Get list of admins
+        const groupAdmins = groupMetadata.participants
+            .filter(member => member.admin)
+            .map((admin, index) => `${index + 1}. @${admin.id.split('@')[0]}`)
+            .join("\n") || "No admins found";
+
+        // Get creation date (convert from timestamp)
+        const creationDate = groupMetadata.creation 
+            ? new Date(groupMetadata.creation * 1000).toLocaleString('en-US', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            }) 
+            : 'Unknown';
+
+        // Format the output message
+        const message = `
+╭────「 *GROUP INFO* 」────◆
+│ 🏷️ *ɢʀᴏᴜᴘ ɴᴀᴍᴇ:* ${groupName}  
+│ 🆔 *ɢʀᴏᴜᴘ ɪᴅ:* ${from}  
+│ 👥 *ᴛᴏᴛᴀʟ ᴍᴇᴍʙᴇʀs:* ${memberCount}  
+│ 👨🏻‍💻 *ᴄʀᴇᴀᴛᴏʀ:* ${creator}  
+│ 📅 *ᴄʀᴇᴀᴛᴇᴅ ᴏɴ:* ${creationDate}  
+│ 👑 *ᴀᴅᴍɪɴs:*  
+│ ${groupAdmins}  
+╰────────────────────◆`;
+
+        // Send the group information with mentions
+        await conn.sendMessage(from, {
+            text: message,
+            mentions: groupMetadata.participants
+                .filter(member => member.admin)
+                .map(admin => admin.id)
+        }, { quoted: mek });
+
+    } catch (error) {
+        console.error("Error in ginfo command:", error);
+        reply("❌ An error occurred while retrieving the group information.");
+    }
+});
 
 cmd({
     pattern: "tagall",
@@ -256,7 +327,7 @@ async (conn, mek, m, { from, participants, reply, isGroup, senderNumber, groupAd
         const senderJid = senderNumber + "@s.whatsapp.net";
 
         if (!groupAdmins.includes(senderJid) && senderNumber !== botOwner) {
-            return reply("❌ Only group admins or the bot owner can use this command.");
+            return reply("*📛 σɴℓу gʀσυρ α∂мιɴѕ σʀ тнє вσт σωɴєʀ ᴄαɴ ᴜѕє тнιѕ ᴄσммαɴ∂.*");
         }
 
         // Ensure group metadata is fetched properly
@@ -381,50 +452,6 @@ async (conn, mek, m, { from, isGroup, isAdmins, isBotAdmins, args, q, reply }) =
 });
 
 cmd({
-    pattern: "kick",
-    react: "✈️",
-    alias: ["k", "remove"],
-    desc: "To Remove a participant from Group",
-    category: "group",
-    use: '.kick',
-    filename: __filename
-},
-async(conn, mek, m, { from, quoted, isGroup, senderNumber, botNumber, groupAdmins, isBotAdmins, reply }) => {
-    try {
-        if (!isGroup) return reply("*📛 This command can only be used in groups.*");
-
-        // Ensure only group admins can use this command
-        if (!groupAdmins.includes(senderNumber + "@s.whatsapp.net")) {
-            return reply("*📛 ᴏɴʟʏ ɢʀᴏᴜᴘ ᴀᴅᴍɪɴs ᴄᴀɴ ᴜsᴇ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ.*");
-        }
-
-        if (!isBotAdmins) return reply("*📛 ɪ ɴᴇᴇᴅ ᴛᴏ ʙᴇ ᴀɴ ᴀᴅᴍɪɴ ᴛᴏ ᴋɪᴄᴋ ᴍᴇᴍʙᴇʀs.*");
-
-        // Fetch mentioned user or replied user
-        let users = quoted ? quoted.sender : (m.mentionedJid ? m.mentionedJid[0] : false);
-        if (!users) return reply("*📛 ᴘʟᴇᴀsᴇ ᴍᴇɴᴛɪᴏɴ ᴀ ɢᴀʏ ᴇxᴀᴍᴘʟᴇ .ᴋɪᴄᴋ @⁨ᴜsᴇʀ*");
-
-        // Prevent kicking bot itself
-        if (users === botNumber) return reply("❌ I can't kick myself!");
-
-        // Extract bot owner's number
-        const botOwner = conn.user.id.split(":")[0];
-
-        // Prevent kicking the owner
-        if (users === botOwner + "@s.whatsapp.net") return reply("*📛 You cannot kick the bot owner!*");
-
-        // Kick the user
-        await conn.groupParticipantsUpdate(from, [users], "remove");
-        await conn.sendMessage(from, { text: "_*Successfully Removed ✅_*" }, { quoted: mek });
-
-    } catch (e) {
-        await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
-        console.log(e);
-        reply(`❌ *Error Occurred !!*\n\n${e}`);
-    }
-});
-
-cmd({
     pattern: "leave",
     alias: ["left", "leftgc", "leavegc"],
     desc: "Leave the group",
@@ -490,11 +517,11 @@ cmd({
 async (conn, mek, m, { from, isGroup, senderNumber, isAdmins, isBotAdmins, reply }) => {
     try {
         if (!isGroup) return reply("❌ This command can only be used in groups.");
-        if (!isAdmins) return reply("*📛 Only group admins can use this command.*");
-        if (!isBotAdmins) return reply("*📛 I need to be an admin to mute the group.*");
+        if (!isAdmins) return reply("*📛 ᴏɴʟʏ ɢʀᴏᴜᴘ ᴀᴅᴍɪɴs ᴄᴀɴ ᴜsᴇ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ.*");
+        if (!isBotAdmins) return reply("*📛 ɴᴇᴇᴅ ᴛᴏ ʙᴇ ᴀɴ ᴀᴅᴍɪɴ ᴛᴏ ᴜɴᴍᴜᴛᴇ ᴛʜᴇ ɢʀᴏᴜᴘ*");
 
         await conn.groupSettingUpdate(from, "announcement");
-        reply("*_✅ Group has been muted. Only admins can send messages._*");
+        reply("*gʀσᴜρ мᴜтє∂ sᴜᴄᴄєѕѕfᴜℓℓу🔐*");
     } catch (e) {
         console.error("Error muting group:", e);
         reply("❌ Failed to mute the group. Please try again.");
@@ -512,11 +539,11 @@ cmd({
 async (conn, mek, m, { from, isGroup, senderNumber, isAdmins, isBotAdmins, reply }) => {
     try {
         if (!isGroup) return reply("❌ This command can only be used in groups.");
-        if (!isAdmins) return reply("*📛 Only group admins can use this command.*");
-        if (!isBotAdmins) return reply("❌ I need to be an admin to unmute the group.");
+        if (!isAdmins) return reply("*📛 ᴏɴʟʏ ɢʀᴏᴜᴘ ᴀᴅᴍɪɴs ᴄᴀɴ ᴜsᴇ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ.*");
+        if (!isBotAdmins) return reply("*📛 ɴᴇᴇᴅ ᴛᴏ ʙᴇ ᴀɴ ᴀᴅᴍɪɴ ᴛᴏ ᴜɴᴍᴜᴛᴇ ᴛʜᴇ ɢʀᴏᴜᴘ*");
 
         await conn.groupSettingUpdate(from, "not_announcement");
-        reply("*_✅ Group has been unmuted. Everyone can send messages._*");
+        reply("*gʀσᴜρ ᴜɴмυтє∂ sᴜᴄᴄєѕѕfᴜℓℓу🔓*");
     } catch (e) {
         console.error("Error unmuting group:", e);
         reply("❌ Failed to unmute the group. Please try again.");

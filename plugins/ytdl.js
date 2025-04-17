@@ -28,7 +28,7 @@ let videoUrl = q;
 
 });
 
-cmd({ pattern: "music", alias: ["audio", "song"], desc: "Search and download audio from YouTube", category: "media", react: "🎧", filename: __filename }, async (conn, mek, m, { from, args, q, reply }) => { try { if (!q) return reply("*𝐏ℓєα𝐬֟፝є 𝐏ʀ๏νιɖє 𝐀 𝐒๏ƞ͛g 𝐍αмє..*");
+cmd({ pattern: "music", alias: ["play2", "song2"], desc: "Search and download audio from YouTube", category: "media", react: "🎧", filename: __filename }, async (conn, mek, m, { from, args, q, reply }) => { try { if (!q) return reply("*𝐏ℓєα𝐬֟፝є 𝐏ʀ๏νιɖє 𝐀 𝐒๏ƞ͛g 𝐍αмє..*");
 
 let videoUrl = q;
     if (!q.includes("youtube.com") && !q.includes("youtu.be")) {
@@ -57,3 +57,4 @@ let videoUrl = q;
 }
 
 });
+
